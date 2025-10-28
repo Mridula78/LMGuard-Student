@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+pyyaml
+jsonschema
+prometheus-client
+python-dotenv
+pytest
+pytest-asyncio

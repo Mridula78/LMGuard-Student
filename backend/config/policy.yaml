@@ -1,0 +1,28 @@
+version: 1
+categories:
+  pii:
+    action: redact
+    severity: 80
+    explanation: "PII removed for privacy."
+  academic_dishonesty:
+    action: borderline
+    severity: 70
+    explanation: "Possible academic dishonesty - review required."
+  injection:
+    action: block
+    severity: 90
+    explanation: "Prompt injection detected - blocked."
+  toxicity:
+    action: block
+    severity: 85
+    explanation: "Toxic content blocked."
+  self_harm:
+    action: block
+    severity: 95
+    explanation: "Self-harm content blocked; resources provided."
+  benign:
+    action: allow
+    severity: 10
+    explanation: "Content allowed."
+fallback_action: block
+
