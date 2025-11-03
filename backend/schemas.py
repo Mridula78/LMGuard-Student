@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
 
 
 class Message(BaseModel):
@@ -15,7 +15,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     action: str
     output: str
-    policy_reason: str
+    policy_reason: Optional[str] = None
     agent_confidence: Optional[float] = None
 
 

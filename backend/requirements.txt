@@ -6,5 +6,8 @@ pyyaml
 jsonschema
 prometheus-client
 python-dotenv
+requests
 pytest
 pytest-asyncio
+sentence-transformers  # optional heavy dependency; install only if using local embeddings
+numpy

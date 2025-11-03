@@ -1,22 +1,37 @@
-import hashlib
 import json
-from datetime import datetime
+import hashlib
+import os
 from typing import Dict
-
+from datetime import datetime
 from deps import config
 
-
 def _hash_student_id(student_id: str) -> str:
+    """Hash student ID with salt."""
     return hashlib.sha256(f"{student_id}{config.HASH_SALT}".encode()).hexdigest()
 
-
 def _redact_pii_from_signals(scanner_signals: Dict) -> Dict:
-    signals_copy = json.loads(json.dumps(scanner_signals))
-    if "pii" in signals_copy:
-        for item in signals_copy["pii"]:
-            item["match"] = "[REDACTED]"
+    """Remove raw PII from signals."""
+    signals_copy = {}
+    # deep copy minimal structure
+    for k, v in (scanner_signals or {}).items():
+        if k == "pii":
+            scrubbed = []
+            for item in v:
+                item_copy = item.copy()
+                item_copy["match"] = "[REDACTED]"
+                scrubbed.append(item_copy)
+            signals_copy[k] = scrubbed
+        else:
+            signals_copy[k] = v
     return signals_copy
 
+def _ensure_log_dir():
+    log_file = config.LOG_FILE
+    log_dir = os.path.dirname(log_file) or "."
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+    except Exception:
+        pass
 
 def log_audit(
     request_id: str,
@@ -25,8 +40,9 @@ def log_audit(
     policy_decision: Dict,
     agent_decision: Dict,
     final_action: str,
-    latencies: Dict,
-) -> None:
+    latencies: Dict
+):
+    """Log audit entry with pseudonymization and PII redaction."""
     student_hash = _hash_student_id(student_id) if student_id else "anonymous"
     log_entry = {
         "request_id": request_id,
@@ -36,12 +52,14 @@ def log_audit(
         "policy_decision": policy_decision,
         "agent_decision": agent_decision,
         "final_action": final_action,
-        "latencies": latencies,
+        "latencies": latencies
     }
     try:
-        with open(config.LOG_FILE, "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
+        _ensure_log_dir()
+        with open(config.LOG_FILE, 'a') as f:
+            f.write(json.dumps(log_entry) + '\n')
     except Exception as e:
-        print(f"Failed to write audit log: {e}")
+        # do not raise — log to stdout for dev visibility
+        print(f"[audit] Failed to write audit log: {e}")
 
 
