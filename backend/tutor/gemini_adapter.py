@@ -21,7 +21,7 @@ def _build_messages(user_message: str, system_preamble: Optional[str] = None):
 
 
 def get_tutor_response(message: str, constrain_to_teaching: bool = False) -> str:
-    if not config.__dict__.get("GOOGLE_API_KEY"):
+    if not getattr(config, "GOOGLE_API_KEY", None):
         return "Tutor: here's a helpful explanation (no direct answers)."
 
     system = None
