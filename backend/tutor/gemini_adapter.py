@@ -1,58 +1,58 @@
-import httpx
+import google.generativeai as genai
 from typing import Optional
 from deps import config
 
-
-GEMINI_CHAT_MODEL = "gemini-1.5-flash"
-
-
-def _build_messages(user_message: str, system_preamble: Optional[str] = None):
-    contents = []
-    if system_preamble:
-        contents.append({
-            "role": "user",
-            "parts": [{"text": system_preamble}]
-        })
-    contents.append({
-        "role": "user",
-        "parts": [{"text": user_message}]
-    })
-    return contents
+GEMINI_CHAT_MODEL = "gemini-2.5-flash"
 
 
 def get_tutor_response(message: str, constrain_to_teaching: bool = False) -> str:
-    if not getattr(config, "GOOGLE_API_KEY", None):
-        return "Tutor: here's a helpful explanation (no direct answers)."
+    """
+    Get tutor response from Google Gemini using the official SDK.
 
-    system = None
+    Args:
+        message: User's question
+        constrain_to_teaching: If True, the assistant will guide but not give direct answers
+
+    Returns:
+        Tutor's response text
+    """
+
+    if not getattr(config, "GOOGLE_API_KEY", None):
+        print("[tutor] No GOOGLE_API_KEY configured")
+        return "I'm here to help you learn! Could you tell me more about what you're trying to understand?"
+
+    # Configure API key
+    genai.configure(api_key=config.GOOGLE_API_KEY)
+
+    # Build system instruction
+    base_instruction = (
+        "You are a helpful educational tutor. Your role is to guide students to understanding "
+        "by teaching concepts, asking guiding questions, and giving hints — "
+        "never providing direct answers to homework or assignments."
+    )
+
     if constrain_to_teaching:
-        system = (
-            "You are a helpful tutor. Teach the underlying concepts and guidance. "
-            "Do not provide exact solutions or final answers. Keep it concise."
+        base_instruction += (
+            " Stay concise and conversational. Focus on helping them think rather than giving answers."
         )
 
-    params = {"key": config.GOOGLE_API_KEY}
-    payload = {
-        "contents": _build_messages(message, system_preamble=system)
-    }
-
     try:
-        with httpx.Client(timeout=8.0) as client:
-            resp = client.post(
-                f"https://generativelanguage.googleapis.com/v1/models/{GEMINI_CHAT_MODEL}:generateContent",
-                params=params,
-                json=payload,
+        model = genai.GenerativeModel(
+            model_name=GEMINI_CHAT_MODEL,
+            system_instruction=base_instruction  # ✅ This is the clean SDK method
+        )
+
+        response = model.generate_content(
+            message,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                max_output_tokens=500,
+                top_p=0.95
             )
-            resp.raise_for_status()
-            data = resp.json()
-            # Gemini response structure: candidates -> content -> parts[0].text
-            candidates = data.get("candidates") or []
-            if not candidates:
-                return "Tutor: here's a helpful explanation (no direct answers)."
-            parts = ((candidates[0] or {}).get("content") or {}).get("parts") or []
-            text = parts[0].get("text") if parts else None
-            return text or "Tutor: here's a helpful explanation (no direct answers)."
-    except Exception:
-        return "Tutor: here's a helpful explanation (no direct answers)."
+        )
 
+        return response.text.strip()
 
+    except Exception as e:
+        print(f"[tutor] Gemini SDK error: {e}")
+        return "I'm having trouble responding right now. Could you try again?"

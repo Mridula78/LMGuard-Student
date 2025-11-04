@@ -11,3 +11,5 @@ pytest
 pytest-asyncio
 sentence-transformers  # optional heavy dependency; install only if using local embeddings
 numpy
+google-generativeai
+
