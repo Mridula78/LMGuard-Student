@@ -177,10 +177,16 @@ async def chat(request: ChatRequest):
         if agent_decision.action == "allow":
             tutor_start = time.time()
             try:
+                # Convert messages to Gemini chat format
+                gemini_messages = [
+                    {"role": m.role, "parts": [{"text": m.content}]} for m in request.messages
+                ]
+
                 tutor_response = get_tutor_response(
-                    user_message,
+                    messages=gemini_messages,
                     constrain_to_teaching=True
                 )
+
             except Exception as e:
                 print(f"[tutor] Error: {e}")
                 tutor_response = "I'm here to help you learn. Could you rephrase your question?"
