@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://lmguard-backend.onrender.com';
 
 export interface Message {
   role: string;
@@ -35,6 +35,6 @@ export const sendChatMessage = async (
 };
 
 export const checkHealth = async (): Promise<{ status: string }> => {
-  const response = await axios.get(`${API_BASE_URL}/health`);
+  const response = await axios.get(`${API_BASE_URL}/`);
   return response.data;
 };
